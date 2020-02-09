@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import uuid
 
 from vj4 import app
 from vj4 import constant
@@ -13,6 +14,7 @@ from vj4.model import user
 from vj4.model.adaptor import discussion
 from vj4.model.adaptor import problem
 from vj4.model.adaptor import setting
+from vj4.util import casclient
 from vj4.util import misc
 from vj4.util import options
 from vj4.util import validator
@@ -34,6 +36,40 @@ class UserSettingsMixin(object):
       return udoc.get(key, None)
     else:
       return None
+
+
+@app.route('/auth/login', 'user_cas_login', global_route=True)
+class UserCASLoginHandler(base.Handler):
+  async def get(self):
+    if self.has_priv(builtin.PRIV_USER_PROFILE):
+      self.redirect(self.reverse_url('domain_main'))
+    else:
+      if len(self.request.query_string) > 0:
+        if self.request.query_string.startswith("ticket="):
+          ticket = self.request.query_string[7:]
+          uinfo = await casclient.get_user_info(ticket)
+          uname = uinfo['sid'][0]
+          udoc = await user.get_by_uname(uname)
+          if udoc is not None:
+            uid = udoc['_id']
+            await asyncio.gather(
+              user.set_by_uid(uid,
+                              loginat=datetime.datetime.utcnow(),
+                              loginip=self.remote_ip),
+              self.update_session(new_saved=True, uid=uid))
+            self.json_or_redirect(self.referer_or_main)
+          else:
+            uid = await system.inc_user_counter()
+            password = uuid.uuid4().hex
+            await user.add(uid, uname, password,
+                           uinfo['email'][0],
+                           self.remote_ip)
+            await self.update_session(new_saved=False, uid=uid)
+            self.json_or_redirect(self.reverse_url('domain_main'))
+        else:
+          raise error.NotFoundError(self.url)
+      else:
+        self.redirect('https://cas.sustech.edu.cn/cas/login?service=' + options.url_prefix + '/auth/login')
 
 
 @app.route('/register', 'user_register', global_route=True)
