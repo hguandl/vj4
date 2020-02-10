@@ -33,7 +33,7 @@
           </button>
         </form>
     {% elif not handler.has_priv(vj4.model.builtin.PRIV_USER_PROFILE) %}
-        <a class="menu__link" href="javascript:showSignInDialog()">
+        <a class="menu__link" href="/auth/login">
           <span class="icon icon-add"></span> {{ _('Login to Claim Homework') }}
         </a>
     {% else %}

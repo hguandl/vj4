@@ -27,7 +27,7 @@
         <p><a href="{{ reverse_url('discussion_create', doc_id=vnode['doc_id']) }}" class="expanded primary button">{{ _('Create a Discussion') }}</a></p>
       {% else %}
         {% if not handler.has_priv(vj4.model.builtin.PRIV_USER_PROFILE) %}
-          <p><a href="javascript:showSignInDialog();" class="expanded primary button">{{ _('Login to Create a Discussion') }}</a></p>
+          <p><a href="/auth/login" class="expanded primary button">{{ _('Login to Create a Discussion') }}</a></p>
         {% else %}
           <p><a href="javascript:;" class="disabled expanded primary button">{{ _('No Permission to Create a Discussion') }}</a></p>
         {% endif %}

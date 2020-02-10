@@ -24,7 +24,7 @@
       </a></li>
     {% else %}
       {% if not handler.has_priv(vj4.model.builtin.PRIV_USER_PROFILE) %}
-        <li class="menu__item"><a class="menu__link" href="javascript:showSignInDialog();">
+        <li class="menu__item"><a class="menu__link" href="/auth/login">
         <span class="icon icon-add"></span> {{ _('Login to Create a Discussion') }}</a></li>
       {% else %}
         <li class="menu__item"><a class="menu__link disabled" href="javascript:;">
@@ -49,7 +49,7 @@
           </button>
         </form>
     {% elif not handler.has_priv(vj4.model.builtin.PRIV_USER_PROFILE) %}
-        <a class="menu__link" href="javascript:showSignInDialog()">
+        <a class="menu__link" href="/auth/login">
           <span class="icon icon-add"></span> {{ _('Login to Attend Contest') }}
         </a>
     {% else %}

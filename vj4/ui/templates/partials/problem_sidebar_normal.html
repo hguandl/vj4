@@ -15,7 +15,7 @@
       </a></li>
     {% else %}
       {% if not handler.has_priv(vj4.model.builtin.PRIV_USER_PROFILE) %}
-        <li class="menu__item"><a class="menu__link" href="javascript:showSignInDialog();">
+        <li class="menu__item"><a class="menu__link" href="/auth/login">
         <span class="icon icon-add"></span> {{ _('Login to Create a Discussion') }}</a></li>
       {% else %}
         <li class="menu__item"><a class="menu__link disabled" href="javascript:;">
@@ -43,7 +43,7 @@
         <span class="icon icon-send"></span> {{ _('Submit') }}
       </a></li>
     {% elif not handler.has_priv(vj4.model.builtin.PRIV_USER_PROFILE) %}
-      <li class="menu__item scratchpad--hide"><a class="menu__link{% if page_name == 'problem_submit' %} active{% endif %}" href="javascript:showSignInDialog();">
+      <li class="menu__item scratchpad--hide"><a class="menu__link{% if page_name == 'problem_submit' %} active{% endif %}" href="/auth/login">
         <span class="icon icon-send"></span> {{ _('Login to Submit') }}
       </a></li>
     {% else %}
