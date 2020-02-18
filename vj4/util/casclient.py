@@ -4,7 +4,7 @@ import json
 from vj4 import error
 from vj4.util import options
 
-logger = logging.getLogger("cas")
+# logger = logging.getLogger("cas")
 
 async def __fetch(url):
     async with aiohttp.ClientSession() as session:
