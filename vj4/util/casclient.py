@@ -1,8 +1,10 @@
 import aiohttp
 import json
+import logging
 from vj4 import error
 from vj4.util import options
 
+logger = logging.getLogger("cas")
 
 async def __fetch(url):
     async with aiohttp.ClientSession() as session:
@@ -15,6 +17,8 @@ async def get_user_info(ticket):
         f'https://cas.sustech.edu.cn/cas/p3/serviceValidate?service='
         f'{options.url_prefix}/auth/login&format=json&ticket={ticket}')
     try:
-        return json.loads(response)['serviceResponse']['authenticationSuccess']['attributes']
+        udoc = json.loads(response)['serviceResponse']['authenticationSuccess']['attributes']
+        logger.info(udoc)
+        return udoc
     except (TypeError, KeyError, ValueError):
         raise error.ValidationError('CAS ticket')
