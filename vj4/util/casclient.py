@@ -1,6 +1,6 @@
 import aiohttp
 import json
-import logging
+# import logging
 from vj4 import error
 from vj4.util import options
 
@@ -18,7 +18,7 @@ async def get_user_info(ticket):
         f'{options.url_prefix}/auth/login&format=json&ticket={ticket}')
     try:
         udoc = json.loads(response)['serviceResponse']['authenticationSuccess']['attributes']
-        logger.info(udoc)
+        # logger.info(udoc)
         return udoc
     except (TypeError, KeyError, ValueError):
         raise error.ValidationError('CAS ticket')

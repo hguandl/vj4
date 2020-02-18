@@ -61,9 +61,11 @@ class UserCASLoginHandler(base.Handler):
           else:
             uid = await system.inc_user_counter()
             password = uuid.uuid4().hex
-            await user.add(uid, uname, password,
-                           uinfo['email'][0],
-                           self.remote_ip)
+            if 'email' in uinfo:
+              email = uinfo['email']
+            else:
+              email = f'{uname}@mail.sustech.edu.cn'
+            await user.add(uid, uname, password, email, self.remote_ip)
             await self.update_session(new_saved=False, uid=uid)
             self.json_or_redirect(self.reverse_url('domain_main'))
         else:
