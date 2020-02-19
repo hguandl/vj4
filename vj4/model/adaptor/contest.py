@@ -35,6 +35,33 @@ def _oi_stat(tdoc, journal):
   return {'score': sum(d['score'] for d in detail), 'detail': detail}
 
 
+async def _adoj_stat(tdoc, journal):
+  async def apply_penalty(domain_id, pid):
+    p = await document.get(domain_id, document.TYPE_PROBLEM, pid)
+    return p['difficulty'] > 6
+
+  naccept = collections.defaultdict(int)
+  effective = {}
+  for j in journal:
+    if j['pid'] in tdoc['pids'] and not (j['pid'] in effective and effective[j['pid']]['accept']):
+      effective[j['pid']] = j
+      if not j['accept']:
+        naccept[j['pid']] += 1
+  detail = list(dict((j['pid'], j) for j in effective.values() if j['pid'] in tdoc['pids']).values())
+  score = 0
+  for d in detail:
+    if await apply_penalty(tdoc['domain_id'], d['pid']):
+      penalty = naccept[d['pid']]
+    else:
+      penalty = 0
+    realscore = effective.get(d['pid'])['score'] - penalty * 10
+    if realscore < 0:
+      realscore = 0
+    d['penalty'] = penalty
+    score += realscore
+  return {'score': score, 'detail': detail}
+
+
 def _acm_stat(tdoc, journal):
   naccept = collections.defaultdict(int)
   effective = {}
@@ -118,6 +145,52 @@ def _oi_scoreboard(is_export, _, tdoc, ranked_tsdocs, udict, dudict, pdict):
     for pid in tdoc['pids']:
       row.append({'type': 'record',
                   'value': tsddict.get(pid, {}).get('score', '-'),
+                  'raw': tsddict.get(pid, {}).get('rid', None)})
+    rows.append(row)
+  return rows
+
+
+def _adoj_scoreboard(is_export, _, tdoc, ranked_tsdocs, udict, dudict, pdict):
+  columns = []
+  columns.append({'type': 'rank', 'value': _('Rank')})
+  columns.append({'type': 'user', 'value': _('User')})
+  columns.append({'type': 'display_name', 'value': _('Display Name')})
+  columns.append({'type': 'total_score', 'value': _('Total Score')})
+  for index, pid in enumerate(tdoc['pids']):
+    if is_export:
+      columns.append({'type': 'problem_score',
+                      'value': '#{0} {1}'.format(index + 1, pdict[pid]['title'])})
+    else:
+      columns.append({'type': 'problem_detail',
+                      'value': '#{0}'.format(index + 1), 'raw': pdict[pid]})
+  rows = [columns]
+  for rank, tsdoc in ranked_tsdocs:
+    if 'detail' in tsdoc:
+      tsddict = {item['pid']: item for item in tsdoc['detail']}
+    else:
+      tsddict = {}
+    row = []
+    row.append({'type': 'string', 'value': rank})
+    row.append({'type': 'user', 'value': udict[tsdoc['uid']]['uname'],
+                'raw': udict[tsdoc['uid']]})
+    row.append({'type': 'display_name',
+                'value': dudict.get(tsdoc['uid'], {}).get('display_name', '')})
+    row.append({'type': 'string', 'value': tsdoc.get("score", 0)})
+    for pid in tdoc['pids']:
+      score = tsddict.get(pid, {}).get('score', None)
+      penalty = tsddict.get(pid, {}).get('penalty', 0)
+      if score is not None:
+        if penalty > 0:
+          score -= penalty * 10
+          if score < 0:
+            score = 0
+          scorestr = f'{score} (-{penalty})'
+        else:
+          scorestr = f'{score}'
+      else:
+        scorestr = '-'
+      row.append({'type': 'record',
+                  'value': scorestr,
                   'raw': tsddict.get(pid, {}).get('rid', None)})
     rows.append(row)
   return rows
@@ -249,6 +322,12 @@ RULES = {
                                  [('score', -1)],
                                  functools.partial(rank.ranked, equ_func=_oi_equ_func),
                                  _oi_scoreboard),
+  constant.contest.RULE_ADOJ: Rule(lambda tdoc, now: now > tdoc['end_at'],
+                                 lambda tdoc, now: now > tdoc['end_at'],
+                                 _adoj_stat,
+                                 [('score', -1)],
+                                 functools.partial(rank.ranked, equ_func=_oi_equ_func),
+                                 _adoj_scoreboard),
   constant.contest.RULE_ACM: Rule(lambda tdoc, now: now >= tdoc['begin_at'],
                                   lambda tdoc, now: now >= tdoc['begin_at'],
                                   _acm_stat,
@@ -430,7 +509,11 @@ async def update_status(domain_id: str, doc_type: int, tid: objectid.ObjectId, u
       raise error.InvalidArgumentError('doc_type')
 
   journal = _get_status_journal(tsdoc)
-  stats = RULES[tdoc['rule']].stat_func(tdoc, journal)
+  stat_func = RULES[tdoc['rule']].stat_func
+  if asyncio.iscoroutinefunction(stat_func):
+    stats = await stat_func(tdoc, journal)
+  else:
+    stats = RULES[tdoc['rule']].stat_func(tdoc, journal)
   tsdoc = await document.rev_set_status(domain_id, tdoc['doc_type'], tid, uid, tsdoc['rev'],
                                         journal=journal, **stats)
   return tsdoc
