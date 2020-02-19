@@ -62,7 +62,7 @@ class UserCASLoginHandler(base.Handler):
             uid = await system.inc_user_counter()
             password = uuid.uuid4().hex
             if 'email' in uinfo:
-              email = uinfo['email']
+              email = uinfo['email'][0]
             else:
               email = f'{uname}@mail.sustech.edu.cn'
             await user.add(uid, uname, password, email, self.remote_ip)

@@ -18,7 +18,7 @@ async def get_user_info(ticket):
         f'{options.url_prefix}/auth/login&format=json&ticket={ticket}')
     try:
         udoc = json.loads(response)['serviceResponse']['authenticationSuccess']['attributes']
-        logger.info(udoc)
+        logger.debug(udoc)
         return udoc
     except (TypeError, KeyError, ValueError):
         raise error.ValidationError('CAS ticket')
