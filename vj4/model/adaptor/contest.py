@@ -181,7 +181,7 @@ def _adoj_scoreboard(is_export, _, tdoc, ranked_tsdocs, udict, dudict, pdict):
       penalty = tsddict.get(pid, {}).get('penalty', 0)
       if score is not None:
         if penalty > 0:
-          score -= penalty * 10
+          score -= penalty * 5
           if score < 0:
             score = 0
           scorestr = f'{score} (-{penalty})'
