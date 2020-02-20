@@ -38,23 +38,34 @@ def _oi_stat(tdoc, journal):
 async def _adoj_stat(tdoc, journal):
   async def apply_penalty(domain_id, pid):
     p = await document.get(domain_id, document.TYPE_PROBLEM, pid)
-    return p['difficulty'] > 6
+    return 'difficulty' in p and p['difficulty'] > 6
 
   naccept = collections.defaultdict(int)
   effective = {}
+  new_score = {}
+  failed_rec = {}
   for j in journal:
     if j['pid'] in tdoc['pids'] and not (j['pid'] in effective and effective[j['pid']]['accept']):
-      effective[j['pid']] = j
+      if j['pid'] not in effective:
+        effective[j['pid']] = j
+        new_score[j['pid']] = j['score']
+        failed_rec[j['pid']] = 0
+      else:
+        current_score = j['score'] - naccept[j['pid']] * document.VALUE_ADOJ_PENALTY
+        if new_score[j['pid']] <= current_score:
+          effective[j['pid']] = j
+          new_score[j['pid']] = current_score
+          failed_rec[j['pid']] = naccept[j['pid']]
       if not j['accept']:
         naccept[j['pid']] += 1
   detail = list(dict((j['pid'], j) for j in effective.values() if j['pid'] in tdoc['pids']).values())
   score = 0
   for d in detail:
     if await apply_penalty(tdoc['domain_id'], d['pid']):
-      penalty = naccept[d['pid']]
+      penalty = failed_rec[d['pid']]
     else:
       penalty = 0
-    realscore = effective.get(d['pid'])['score'] - penalty * 5
+    realscore = new_score[d['pid']]
     if realscore < 0:
       realscore = 0
     d['penalty'] = penalty
@@ -181,7 +192,7 @@ def _adoj_scoreboard(is_export, _, tdoc, ranked_tsdocs, udict, dudict, pdict):
       penalty = tsddict.get(pid, {}).get('penalty', 0)
       if score is not None:
         if penalty > 0:
-          score -= penalty * 5
+          score -= penalty * document.VALUE_ADOJ_PENALTY
           if score < 0:
             score = 0
           scorestr = f'{score} (-{penalty})'
@@ -531,6 +542,10 @@ async def recalc_status(domain_id: str, doc_type: int, tid: objectid.ObjectId):
       if 'journal' not in tsdoc or not tsdoc['journal']:
         continue
       journal = _get_status_journal(tsdoc)
+      stat_func = RULES[tdoc['rule']].stat_func
+    if asyncio.iscoroutinefunction(stat_func):
+      stats = await stat_func(tdoc, journal)
+    else:
       stats = RULES[tdoc['rule']].stat_func(tdoc, journal)
       await document.rev_set_status(domain_id, doc_type, tid, tsdoc['uid'], tsdoc['rev'],
                                     return_doc=False, journal=journal, **stats)
