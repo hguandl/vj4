@@ -54,7 +54,7 @@ async def _adoj_stat(tdoc, journal):
       penalty = naccept[d['pid']]
     else:
       penalty = 0
-    realscore = effective.get(d['pid'])['score'] - penalty * 10
+    realscore = effective.get(d['pid'])['score'] - penalty * 5
     if realscore < 0:
       realscore = 0
     d['penalty'] = penalty
