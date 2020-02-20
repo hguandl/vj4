@@ -65,9 +65,11 @@ async def _adoj_stat(tdoc, journal):
         record['failed_best'] = record['failed_now']
       if not j['accept']:
         record['failed_now'] += 1
-  detail = list(d['detail'] for d in records.values())
+  detail = list(d['detail'] for d in records.values() if 'pid' in d['detail'])
   score = 0
   for d in detail:
+    if 'pid' not in d:
+      continue
     record = records[d['pid']]
     if record['is_penalty']:
       penalty = record['failed_best']
