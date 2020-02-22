@@ -19,15 +19,15 @@ cache:
   directories:
   - "$HOME/.cache/pip"
   - node_modules
-before_deploy:
-- tar -cJf uibuild.tar.xz vj4/.uibuild vj4/constant
-deploy:
-  provider: releases
-  api_key: $GITHUB_TOKEN
-  name: uibuild-$(git rev-parse --short HEAD)
-  file: uibuild.tar.xz
-  skip_cleanup: true
-  on:
-    repo: hguandl/vj4
-    tags: true
-    python: 3.7
+# before_deploy:
+# - tar -cJf uibuild.tar.xz vj4/.uibuild vj4/constant
+# deploy:
+#   provider: releases
+#   api_key: $GITHUB_TOKEN
+#   name: uibuild-$(git rev-parse --short HEAD)
+#   file: uibuild.tar.xz
+#   skip_cleanup: true
+#   on:
+#     repo: hguandl/vj4
+#     tags: true
+#     python: 3.7
