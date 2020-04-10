@@ -34,7 +34,8 @@ class WaitingStatusHandler(base.Handler):
                     .sort('judge_at', -1)\
                     .limit(5)
     async for r in waiting:
-      waiting_records.append(r['judge_at'])
+      if 'judge_at' in r:
+        waiting_records.append(r['judge_at'])
     last_waiting_time = waiting_records[0] if len(waiting_records) > 0 else 0
 
     now = datetime.now()
