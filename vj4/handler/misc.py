@@ -36,7 +36,7 @@ class WaitingStatusHandler(base.Handler):
     async for r in waiting:
       if 'judge_at' in r:
         waiting_records.append(r['judge_at'])
-    last_waiting_time = waiting_records[0] if len(waiting_records) > 0 else 0
+    last_waiting_time = waiting_records[0].timestamp() if len(waiting_records) > 0 else 0
 
     now = datetime.now()
     if len(waiting_records) >= 5 or now.timestamp() - last_waiting_time <= 300:
